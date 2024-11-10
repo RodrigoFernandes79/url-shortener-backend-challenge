@@ -17,7 +17,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -99,6 +101,64 @@ class UrlServiceTest {
                 () -> assertEquals(savedUrlEntity.getOriginalUrl(), urlRequestDto.originalUrl()),
                 () -> assertEquals(1, savedUrlEntity.getAccessCount()),
                 () -> assertTrue(savedUrlEntity.getLastAccessed().toLocalDate().isEqual(LocalDate.now()))
+        );
+    }
+
+    @Test
+    @DisplayName("Should calculate access average per day when there is more than one day")
+    void getUrlStatisticsScenario01() {
+        //Arrange
+        String id = "abc123";
+        UrlEntity urlEntity = new UrlEntity();
+        urlEntity.setAccessCount(20);
+        urlEntity.setCreatedAt(LocalDateTime.now().minusDays(10));
+        urlEntity.setLastAccessed(LocalDateTime.now());
+        long daysSinceCreation = Duration.between(urlEntity.getCreatedAt(), urlEntity.getLastAccessed()).toDays();
+
+        double averageAccessesPerDay = daysSinceCreation > 0
+                ? (double) urlEntity.getAccessCount() / daysSinceCreation
+                : (double) urlEntity.getAccessCount();
+
+        given(urlRepository.findById(id)).willReturn(Optional.of(urlEntity));
+
+        // Act
+        var urlStatistics = urlService.getUrlStatistics(id);
+
+        // Assert
+        assertAll(
+                () -> assertEquals(2.0, urlStatistics.averageAccessesPerDay()),
+                () -> assertEquals(20, urlStatistics.totalAccess()),
+                () -> assertEquals(averageAccessesPerDay, urlStatistics.averageAccessesPerDay()),
+                () -> assertEquals(urlEntity.getAccessCount(), urlStatistics.totalAccess())
+        );
+    }
+
+    @Test
+    @DisplayName("Should return the total access count when the number of days is zero")
+    void getUrlStatisticsScenario02() {
+        //Arrange
+        String id = "abc123";
+        UrlEntity urlEntity = new UrlEntity();
+        urlEntity.setAccessCount(15);
+        urlEntity.setCreatedAt(LocalDateTime.now());
+        urlEntity.setLastAccessed(LocalDateTime.now());
+        long daysSinceCreation = Duration.between(urlEntity.getCreatedAt(), urlEntity.getLastAccessed()).toDays();
+
+        double averageAccessesPerDay = daysSinceCreation > 0
+                ? (double) urlEntity.getAccessCount() / daysSinceCreation
+                : (double) urlEntity.getAccessCount();
+
+        given(urlRepository.findById(id)).willReturn(Optional.of(urlEntity));
+
+        // Act
+        var urlStatistics = urlService.getUrlStatistics(id);
+
+        // Assert
+        assertAll(
+                () -> assertEquals(15, urlStatistics.averageAccessesPerDay()),
+                () -> assertEquals(15, urlStatistics.totalAccess()),
+                () -> assertEquals(averageAccessesPerDay, urlStatistics.averageAccessesPerDay()),
+                () -> assertEquals(urlEntity.getAccessCount(), urlStatistics.totalAccess())
         );
     }
 }
