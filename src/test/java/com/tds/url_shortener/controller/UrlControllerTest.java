@@ -118,4 +118,39 @@ class UrlControllerTest {
         assertEquals(urlOriginal.originalUrl(), response.getRedirectedUrl());
     }
 
+    @Test
+    @DisplayName("Should return a 404 status code when getUrlStatistics will not find the id")
+    void getUrlStatisticsScenario01() throws Exception {
+        String id = "abc123";
+        when(urlService.getUrlStatistics(id)).thenThrow(UrlIdNotFoundException.class);
+        //Act
+        var response = mvc.perform(
+                        get("/api/v1/urls/{id}/statistics", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                ).andReturn()
+                .getResponse();
+        //Asserts
+        assertEquals(404, response.getStatus(), "Url id Not found");
+    }
+
+    @Test
+    @DisplayName("Should return a 200 status code when getUrlStatistics will  find the id")
+    void getUrlStatisticsScenario02() throws Exception {
+        String id = "abc123";
+        UrlStatisticsDto urlStatisticsDto = new UrlStatisticsDto(50, 10);
+        when(urlService.getUrlStatistics(id)).thenReturn(urlStatisticsDto);
+        //Act
+        var response = mvc.perform(
+                        get("/api/v1/urls/{id}/statistics", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                ).andReturn()
+                .getResponse();
+        //Asserts
+        var jsonResponse = response.getContentAsString();
+        var jsonExpected = urlStatisticsDtoJacksonTester.write(urlStatisticsDto).getJson();
+        assertEquals(200, response.getStatus());
+        assertEquals(jsonExpected, jsonResponse);
+    }
+
+
 }
