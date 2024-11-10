@@ -1,4 +1,4 @@
-package com.tds.url_shortener;
+package com.tds.url_shortener.controller;
 
 import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
