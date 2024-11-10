@@ -30,10 +30,9 @@ public class UrlController {
     @GetMapping("/{id}")
     public ResponseEntity<Void> redirectToUrl(@PathVariable String id) {
         var originalUrl = urlService.redirectToUrl(id);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(URI.create(originalUrl.originalUrl()));
+
         return ResponseEntity.status(HttpStatus.FOUND)
-                .headers(headers)
+                .location(URI.create(originalUrl.originalUrl()))
                 .build();
     }
 

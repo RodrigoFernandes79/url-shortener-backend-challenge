@@ -5,12 +5,13 @@ import com.tds.url_shortener.domain.dto.UrlRequestDto;
 import com.tds.url_shortener.domain.entity.UrlEntity;
 import com.tds.url_shortener.exceptions.OriginalUrlFoundException;
 import com.tds.url_shortener.exceptions.UrlIdNotFoundException;
-import com.tds.url_shortener.exceptions.UrlNotProvidedException;
 import com.tds.url_shortener.repository.UrlEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class UrlService {
@@ -18,11 +19,8 @@ public class UrlService {
     private UrlEntityRepository urlRepository;
 
     public ShortenUrlResponseDto shortenUrl(UrlRequestDto urlRequest, HttpServletRequest httpServletRequest) {
-        if (urlRequest.originalUrl() == null || urlRequest.originalUrl().trim().isEmpty()) {
-            throw new UrlNotProvidedException("Original Url is not provided");
-        }
-        var urlFound = urlRepository.findByOriginalUrl(urlRequest.originalUrl());
-        if (urlFound.isPresent()) {
+        var urlEntity = urlRepository.findByOriginalUrl(urlRequest.originalUrl());
+        if (urlEntity.isPresent()) {
             throw new OriginalUrlFoundException("Original Url Already exists");
         }
         String id;
@@ -41,6 +39,8 @@ public class UrlService {
         }
         var urlFound = url.get();
         urlFound.setAccessCount(urlFound.getAccessCount() + 1);
+        urlFound.setLastAccessed(LocalDateTime.now());
+
         urlRepository.save(urlFound);
         return new UrlRequestDto(urlFound.getOriginalUrl());
     }
