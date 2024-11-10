@@ -4,6 +4,7 @@ import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
 import com.tds.url_shortener.domain.entity.UrlEntity;
 import com.tds.url_shortener.exceptions.OriginalUrlFoundException;
+import com.tds.url_shortener.exceptions.UrlIdNotFoundException;
 import com.tds.url_shortener.exceptions.UrlNotProvidedException;
 import com.tds.url_shortener.repository.UrlEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,5 +32,16 @@ public class UrlService {
         var redirectUrl = httpServletRequest.getRequestURL().toString().replace("shorten", id);
         urlRepository.save(new UrlEntity(id, urlRequest.originalUrl(), redirectUrl));
         return new ShortenUrlResponseDto(redirectUrl);
+    }
+
+    public UrlRequestDto redirectToUrl(String id) {
+        var url = urlRepository.findById(id);
+        if (url.isEmpty()) {
+            throw new UrlIdNotFoundException("Url id Not found");
+        }
+        var urlFound = url.get();
+        urlFound.setAccessCount(urlFound.getAccessCount() + 1);
+        urlRepository.save(urlFound);
+        return new UrlRequestDto(urlFound.getOriginalUrl());
     }
 }
