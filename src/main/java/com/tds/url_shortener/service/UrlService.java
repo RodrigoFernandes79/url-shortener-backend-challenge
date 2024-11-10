@@ -2,6 +2,7 @@ package com.tds.url_shortener.service;
 
 import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
+import com.tds.url_shortener.domain.dto.UrlStatisticsDto;
 import com.tds.url_shortener.domain.entity.UrlEntity;
 import com.tds.url_shortener.exceptions.OriginalUrlFoundException;
 import com.tds.url_shortener.exceptions.UrlIdNotFoundException;
@@ -11,6 +12,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 @Service
@@ -43,5 +45,21 @@ public class UrlService {
 
         urlRepository.save(urlFound);
         return new UrlRequestDto(urlFound.getOriginalUrl());
+    }
+
+    public UrlStatisticsDto getUrlStatistics(String id) {
+        var urlFound = urlRepository.findById(id)
+                .orElseThrow(() -> new UrlIdNotFoundException("Url id Not found"));
+        double averageAccessUrlPerDay = calculateAverageAccessesPerDay(urlFound);
+
+        return (new UrlStatisticsDto(urlFound.getAccessCount(), averageAccessUrlPerDay));
+    }
+
+    private double calculateAverageAccessesPerDay(UrlEntity urlEntity) {
+        long daysSinceCreation = Duration.between(urlEntity.getCreatedAt(), urlEntity.getLastAccessed()).toDays();
+
+        return daysSinceCreation > 0
+                ? (double) urlEntity.getAccessCount() / daysSinceCreation
+                : (double) urlEntity.getAccessCount();
     }
 }
