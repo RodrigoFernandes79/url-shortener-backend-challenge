@@ -12,6 +12,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Service
 public class UrlService {
     @Autowired
@@ -41,6 +43,8 @@ public class UrlService {
         }
         var urlFound = url.get();
         urlFound.setAccessCount(urlFound.getAccessCount() + 1);
+        urlFound.setLastAccessed(LocalDateTime.now());
+
         urlRepository.save(urlFound);
         return new UrlRequestDto(urlFound.getOriginalUrl());
     }
