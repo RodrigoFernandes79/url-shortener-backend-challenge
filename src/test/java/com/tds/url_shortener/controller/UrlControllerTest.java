@@ -3,6 +3,7 @@ package com.tds.url_shortener.controller;
 import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
 import com.tds.url_shortener.domain.dto.UrlStatisticsDto;
+import com.tds.url_shortener.exceptions.UrlIdNotFoundException;
 import com.tds.url_shortener.service.UrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -13,12 +14,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @SpringBootTest
@@ -78,6 +81,41 @@ class UrlControllerTest {
         assertEquals(201, response.getStatus());
         assertEquals(jsonExpected, jsonResponse);
 
+    }
+
+    @Test
+    @DisplayName("Should return a 404 status code when redirectToUrl will not find the id")
+    void redirectToUrlScenario01() throws Exception {
+        //Arrange
+        String id = "abc123";
+        when(urlService.redirectToUrl(id)).thenThrow(UrlIdNotFoundException.class);
+        //Act
+        var response = mvc.perform(
+                        get("/api/v1/urls/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                ).andReturn()
+                .getResponse();
+        //Asserts
+        assertEquals(404, response.getStatus(), "Url id Not found");
+    }
+
+    @Test
+    @DisplayName("Should return a 302 status code when redirectToUrl will find the id")
+    void redirectToUrlScenario02() throws Exception {
+        //Arrange
+        String id = "abc123";
+        UrlRequestDto urlOriginal = new UrlRequestDto("https://www.original_url.com");
+
+        when(urlService.redirectToUrl(id)).thenReturn(urlOriginal);
+        //Act
+        var response = mvc.perform(
+                        get("/api/v1/urls/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                ).andReturn()
+                .getResponse();
+        //Asserts
+        assertEquals(HttpStatus.FOUND.value(), response.getStatus());
+        assertEquals(urlOriginal.originalUrl(), response.getRedirectedUrl());
     }
 
 }
