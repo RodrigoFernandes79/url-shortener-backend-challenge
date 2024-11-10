@@ -31,6 +31,14 @@ public class UrlEntity {
         return originalUrl;
     }
 
+    public String getShortUrl() {
+        return shortUrl;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -63,5 +71,6 @@ public class UrlEntity {
     public int hashCode() {
         return Objects.hash(id);
     }
+
 
 }
