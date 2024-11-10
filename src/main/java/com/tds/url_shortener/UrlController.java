@@ -2,10 +2,10 @@ package com.tds.url_shortener;
 
 import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
+import com.tds.url_shortener.domain.dto.UrlStatisticsDto;
 import com.tds.url_shortener.service.UrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +34,12 @@ public class UrlController {
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(originalUrl.originalUrl()))
                 .build();
+    }
+
+    @GetMapping("/{id}/statistics")
+    public ResponseEntity<UrlStatisticsDto> getUrlStatistics(@PathVariable String id) {
+        var statistics = urlService.getUrlStatistics(id);
+        return ResponseEntity.ok().body(statistics);
     }
 
 }
