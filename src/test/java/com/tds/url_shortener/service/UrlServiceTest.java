@@ -4,6 +4,7 @@ import com.tds.url_shortener.domain.dto.ShortenUrlResponseDto;
 import com.tds.url_shortener.domain.dto.UrlRequestDto;
 import com.tds.url_shortener.domain.entity.UrlEntity;
 import com.tds.url_shortener.exceptions.OriginalUrlFoundException;
+import com.tds.url_shortener.exceptions.UrlIdNotFoundException;
 import com.tds.url_shortener.repository.UrlEntityRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Assertions;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,6 +67,38 @@ class UrlServiceTest {
                 () -> assertEquals(savedUrlEntity.getShortUrl(), shortenedUrlResponseDto.shortUrl()),
                 () -> assertEquals(savedUrlEntity.getOriginalUrl(), urlRequest.originalUrl()),
                 () -> assertTrue(shortenedUrlResponseDto.shortUrl().contains("http://localhost:8080/api/v1/urls/"))
+        );
+    }
+
+    @Test
+    @DisplayName("Should throws an exception when Url id was not found into redirectUrl method")
+    void redirectToUrlScenario01() {
+        //Arrange
+        String id = "abc123";
+        given(urlRepository.findById(id)).willReturn(Optional.empty());
+
+        //Act & Assertions
+        var exception = assertThrows(UrlIdNotFoundException.class, () -> urlService.redirectToUrl(id));
+        assertEquals("Url id Not found", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should save the accessCount and the LastAccessed when will find urlEntity")
+    void redirectToUrlScenario02() {
+        //Arrange
+        String id = "abc123";
+        given(urlRepository.findById(id)).willReturn(Optional.of(new UrlEntity()));
+        //Act
+        var urlRequestDto = urlService.redirectToUrl(id);
+
+        //Assertions
+        then(urlRepository).should().save(argumentCaptorUrlEntity.capture());
+        var savedUrlEntity = argumentCaptorUrlEntity.getValue();
+
+        assertAll(
+                () -> assertEquals(savedUrlEntity.getOriginalUrl(), urlRequestDto.originalUrl()),
+                () -> assertEquals(1, savedUrlEntity.getAccessCount()),
+                () -> assertTrue(savedUrlEntity.getLastAccessed().toLocalDate().isEqual(LocalDate.now()))
         );
     }
 }
