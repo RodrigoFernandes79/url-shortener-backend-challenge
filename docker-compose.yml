@@ -9,3 +9,29 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+    networks:
+      - my-network-urlshortener-api
+  urlshortener-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: fernandesrh/urlshortener-api
+    container_name: urlshortener-api-bridge
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_USER=${MONGODB_USER}
+      - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+      - SPRING_DATA_MONGODB_HOST=mongodb
+      - SPRING_DATA_MONGODB_PORT=27017
+      - MONGODB_DATABASE=${MONGODB_DATABASE}
+      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+    command: mvn spring-boot:run
+    depends_on:
+      - mongodb
+    networks:
+      - my-network-urlshortener-api
+networks:
+  my-network-urlshortener-api:
+    driver: bridge
